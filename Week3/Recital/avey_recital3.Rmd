@@ -1,0 +1,249 @@
+---
+title: "Foundations of Stategic Business Analytics: Module 3: Predicting and Forecasting"
+author: "Stefan Avey"
+date: "2016-12-09"
+output:
+  pdf_document:
+    toc: true
+    toc_depth: 2
+    number_sections: true
+    df_print: kable
+---
+
+
+```{r setup, eval = TRUE, echo = FALSE, message = FALSE, warning = FALSE}
+library(tidyverse)
+library(aveytoolkit)
+library(survival)
+
+options(stringsAsFactors = FALSE)
+```
+
+# Credit Scoring Revisited
+```{r credit}
+
+credit <- read.csv("DATA_3.01_CREDIT.csv")
+credit2 <- read.csv("DATA_4.01_CREDIT2.csv")
+
+dim(credit)
+dim(credit2)
+
+head(credit)
+
+```
+
+
+## Predict Credit Rating
+
+```{r credit2, fig.height = 3.5, fig.width = 7}
+
+## Build model to predict Credit Rating
+lmod <- lm(Rating ~ ., credit)
+
+credit <- mutate(credit, Rating_fitted = predict(lmod, newdata = credit))
+credit2 <- mutate(credit2, Rating_fitted = predict(lmod, newdata = credit2))
+
+## Original Dataset
+lab <- paste0("Corr: ", round(cor(credit$Rating, credit$Rating_fitted), 2))
+p1 <- ggplot(data = credit, aes(x = Rating, y = Rating_fitted)) +
+  geom_point() +
+  geom_smooth(color = "blue", method = lm, se = FALSE) +
+  geom_text(data = data.frame(Rating = 250, Rating_fitted = 800),
+            label = lab, color = "blue", size = 5) +
+  ggtitle("Fitted") +
+  getBaseTheme()
+
+## New Dataset
+lab <- paste0("Corr: ", round(cor(credit2$Rating, credit2$Rating_fitted), 2))
+p2 <- ggplot(data = credit2, aes(x = Rating, y = Rating_fitted)) +
+  geom_point() +
+  geom_smooth(color = "blue", method = lm, se = FALSE) +
+  geom_text(data = data.frame(Rating = 250, Rating_fitted = 800),
+            label = lab, color = "blue", size = 5) +
+  ggtitle("Out-of-Sample") +
+  getBaseTheme()
+
+Multiplot(p1, p2, cols = 2)
+```
+
+# HR Analytics Revisited
+
+```{r hr}
+hr2 <- read.csv("DATA_3.02_HR2.csv")
+hr3 <- read.csv("DATA_4.02_HR3.csv")
+
+str(hr2)
+str(hr3)
+```
+
+## What Predicts Attrition?
+
+We can use logistic regression to ask what factors will predict if an employee will leave the company.
+
+```{r hr2, fig.height = 6, fig.width = 6}
+## Fit logistic regressio model
+logmod <- glm(left ~ ., family = binomial(logit), data = hr2)
+
+hr3 <- hr3 %>%
+  mutate(probaToLeave = predict(logmod, newdata = hr3),
+         performance = LPE)
+
+## Prioritize who to try to retain (high performance, high probability to leave)
+hr3 <- hr3 %>%
+  tbl_df() %>%
+  mutate(priority = performance * probaToLeave) %>%
+  arrange(-priority)
+
+## Plot probability to leave vs performance
+p3 <- ggplot(data = hr3, aes(x = probaToLeave, y = performance)) +
+  geom_point() +
+  xlab("Probability to Leave\n(low -> high)") +
+  ylab("Performance (LPE)") +
+  getBaseTheme()
+plot(p3)
+
+
+## Add priority to the plot
+p4 <- p3 +
+  geom_point(aes(color = priority))
+plot(p4)
+
+## Add segments to the plot
+p5 <- p3 +
+  annotate("rect", xmin = -1.25, xmax = 2.5, ymin = 0.6, ymax = 1,
+           fill = "red", alpha = 0.2) +
+  annotate("rect", xmin = -7, xmax = -1.25, ymin = 0.6, ymax = 1,
+           fill = "green", alpha = 0.2) +
+  annotate("rect", xmin = -7, xmax = 2.5, ymin = 0.35, ymax = 0.6,
+           fill = "orange", alpha = 0.2) +
+  annotate("text", x = -6, y = 0.8, label = "Maintain", size = 7) +
+  annotate("text", x = -6, y = 0.45, label = "Up or Out", size = 7) +
+  annotate("text", x = 1.25, y = 0.98, label = "Retain", size = 7)
+plot(p5)
+```
+
+# Predictive Maintenance
+
+```{r maint}
+mnt <- read.csv("DATA_4.03_MNT.csv") %>%
+  mutate_if(is.character, as.factor)
+str(mnt)
+```
+
+## When Will an Part Fail?
+
+The previous analysis predicted an employees probability of leaving but does not include the dimension of time. Will the employees likely to leave move on tomorrow or in 3 years?
+
+What if we want to predict not just whether something will happen, but when. We can use a survival analysis to predict when something will happen.  In this example, we use information on mechanical parts like a pressure index, moisture index, and temperature index to predict how soon the part will break.
+
+```{r maint2}
+lmod <- lm(lifetime ~ . -broken, data = mnt)
+summary(lmod)
+
+response <- Surv(time = mnt$lifetime, event = mnt$broken)
+survmod <- survreg(response ~ pressureInd + moistureInd +
+                     temperatureInd + team + provider,
+                   dist = "gaussian", data = mnt)
+summary(survmod)
+
+forecast <- mnt %>%
+  mutate(expectedLifetime = predict(survmod, newdata = mnt,
+             type = "quantile", p = 0.5)) %>%
+  mutate(RemainingLT = expectedLifetime - lifetime) %>%
+  filter(broken == 0) %>%
+  arrange(RemainingLT)
+
+ggplot(data = forecast) +
+  geom_point(aes(x = lifetime, y = expectedLifetime)) +
+  getBaseTheme()
+
+## survfit(response ~ pressureInd + moistureInd + temperatureInd + team + provider,
+##         data = mnt)
+
+```
+
+# Seasonal Sales of Chocolate
+
+```{r choc}
+
+choc <- read.csv('DATA_4.04_CHOC.csv')
+str(choc)
+summary(choc$sales)
+
+## Munge the month and year into a date format
+## Just assign the first of each month
+choc <- choc %>%
+    tbl_df %>%
+    separate(month, into = c("monthNum", "monthName")) %>%
+    mutate(monthName = factor(monthName, levels = month.name)) %>%
+    mutate(date = as.Date(paste0("01", monthNum, year), format = "%d%m%Y"))
+
+```
+
+## Visualize Chocolate Sales Over Time
+
+When we visualize chocolate sales over a 10-year span, we notice a seasonal pattern where some parts of the year have very high sales and other parts have very low sales.
+
+```{r chocViz}
+
+p6 <- ggplot(data = choc, aes(x = date, y = sales)) +
+    geom_line() +
+    getBaseTheme()
+plot(p6)
+
+```
+
+## Model Chocolate Sales over Time
+
+We can fit a linear model to predict chocolate sales using the month of the year in order to determine which months are driving this seasonality.  Even though the effect of month looks non-linear, this still works well in practice.
+
+```{r chocMod}
+
+lmod <- lm(sales ~ monthNum, data = choc)
+
+choc <- mutate(choc, sales_predicted = fitted.values(lmod))
+
+## Residuals vs fitted values.
+## The model gets worse at predicting as the sales volume increases
+plot(lmod, which = 1)
+
+summary(lmod)
+
+```
+
+We can see from the summary that months 2 (February), 11 (November), and 12 (December) positively predict chocolate sales while summer months 06-09 (June - September) negatively predict chocolate sales.
+
+## Chocolate Sales by Month
+
+Combining all the years together, we can see a boxplot showing the distribution of sales per month.
+
+```{r chocBoxplot}
+
+p7 <- ggplot(data = choc, aes(x = monthName, y = sales)) +
+    geom_boxplot() +
+    xlab("month") +
+    getBaseTheme() +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1))
+plot(p7)
+
+```
+
+## Recovery Thanks To the Model
+
+```{r chocRecovery}
+
+plotDat <- choc %>%
+    rename(sales_actual = sales) %>%
+    gather(key = "type", value = "sales", contains("sales_")) %>%
+    separate(type, into = c("metric", "source"))
+
+p8 <- ggplot(data = plotDat, aes(x = date, y = sales,
+                                 color = source, lty = source)) +
+    geom_line(alpha = 0.8) +
+    scale_color_manual(values = c(actual = "coral", predicted = "grey40")) +
+    getBaseTheme()
+plot(p8)
+
+```
+
+Notice that the predicted value in this simple model does not know anything about the order of the years, it simply predicts the same values every year that on average fit the montly data the best.

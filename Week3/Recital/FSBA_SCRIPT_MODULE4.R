@@ -18,7 +18,7 @@
 ####     EXAMPLE N°1 - CREDIT SCORING 2                 ####
 ############################################################
 
-# Set your directory to the folder where you have downloaded the Insurance 2 dataset 
+# Set your directory to the folder where you have downloaded the Insurance 2 dataset
 
 # To clean up the memory of your current R session run the following line
 rm(list=ls(all=TRUE))
@@ -32,7 +32,7 @@ str(datanew) # The str() function shows the structure of your dataset and detail
 summary(datanew) # The summary() function provides for each variable in your dataset the minimum, mean, maximum and quartiles
 
 linreg=lm(Rating~.,data=dataold) # Estimate a linear regression model of Rating as a function of everything else.
-predcreditscore = predict(linreg,newdata=datanew,type="response") 
+predcreditscore = predict(linreg,newdata=datanew,type="response")
 
 cor(linreg$fitted.values,dataold$Rating) # Computes the correlation between the fitted values and the actual ones
 plot(dataold$Rating,linreg$fitted.values) # Plot the fitted values vs. the actual ones
@@ -76,7 +76,7 @@ View(orderpredattrition)
 ####        EXAMPLE N°3 - PREDICTIVE MAINTENANCE       ####
 ###########################################################
 
-# Set your directory to the folder where you have downloaded the Predictive Maintenance dataset 
+# Set your directory to the folder where you have downloaded the Predictive Maintenance dataset
 
 # to clean up the memory of your current R session run the following line
 rm(list=ls(all=TRUE))
@@ -116,7 +116,7 @@ View(ActionsPriority) # View the output and take actions!
 ####        EXAMPLE N°4 - SEASONAL SALES OF CHOCOLATES ####
 ###########################################################
 
-# Set your directory to the folder where you have downloaded the Chocolate dataset 
+# Set your directory to the folder where you have downloaded the Chocolate dataset
 
 # to clean up the memory of your current R session run the following line
 rm(list=ls())
