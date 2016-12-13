@@ -101,10 +101,11 @@ cntbSatisRank = aggregate(left~ rankSatis, data=tempdata, FUN=length) # We compu
 symbols(aggbSatisRank$rankSatis,aggbSatisRank$left,circles=cntbSatisRank$left, inches=.2, fg="white", bg="red",main= "Satisfaction and Employee Attrition", ylab="Average Attrition Rate", xlab= "Rank of Satisfaction")
 
 
-#######################################################
-##                  Addendum                         ##
-## Contributed by Stefan Avey (http://stefanavey.me) ##
-#######################################################
+################################################################
+##                         Addendum                           ##
+##                Contributed by Stefan Avey                  ##
+## https://github.com/stefanavey/strategic-business-analytics ##
+################################################################
 ## The Bubble Charts in the last 2 examples can be made more rigorous by adjusting
 ## the area rather than the radius.
 ## See the comment in the Week 2 Forum: "Circle Definitions and Area in HR Bubble Chart"
