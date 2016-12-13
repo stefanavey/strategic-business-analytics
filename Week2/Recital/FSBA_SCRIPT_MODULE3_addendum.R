@@ -18,7 +18,7 @@
 ####     EXAMPLE N°1 - CREDIT SCORING                   ####
 ############################################################
 
-# Set your directory to the folder where you have downloaded the Credit Scoring dataset 
+# Set your directory to the folder where you have downloaded the Credit Scoring dataset
 
 # To clean up the memory of your current R session run the following line
 rm(list=ls(all=TRUE))
@@ -90,7 +90,7 @@ plot(aggbTimeRank$TIC,aggbTimeRank$left,main= "Time and Employee Attrition", yla
 # An even better one!
 # (See Addendum A)
 cntbTimeRank=aggregate(left~ TIC, data=tempdata, FUN=length) # We compute the number of employees for each value of TIC
-symbols(aggbTimeRank$TIC,aggbTimeRank$left,circles=cntbTimeRank$left, inches=.75, fg="white", bg="red",main= "Time and Employee Attrition", ylab="Average Attrition Rate", xlab= "Time spent") # we 
+symbols(aggbTimeRank$TIC,aggbTimeRank$left,circles=cntbTimeRank$left, inches=.75, fg="white", bg="red",main= "Time and Employee Attrition", ylab="Average Attrition Rate", xlab= "Time spent") # we
 
 # Let's use a more visual way to see the effect of the most important driver: Satisfaction
 # (See Addendum B)
@@ -172,7 +172,7 @@ cntbSatisRank = aggregate(left~ rankSatis, data=tempdata, FUN=length) # We compu
 
 ## Again here, we want to size the circles by their area, not radius
 size <- cntbSatisRank$left
-radius <- sqrt(area / pi)
+radius <- sqrt(size / pi)
 symbols(x = aggbSatisRank$rankSatis, y = aggbSatisRank$left,
         circles = radius, inches = 0.2, fg = "white", bg = "red",
         main =  "Satisfaction and Employee Attrition",
